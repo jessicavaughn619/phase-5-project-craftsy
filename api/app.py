@@ -10,15 +10,15 @@ from models import User, OAuth
 
 api = Api(app)
 
-google_blueprint = make_google_blueprint(
-    scope=["openid", "profile", "email"],
+blueprint = make_google_blueprint(
+    scope=["email"],
     storage=SQLAlchemyStorage(OAuth, db.session, user=current_user)
 )
-app.register_blueprint(google_blueprint, url_prefix="/api/login")
+app.register_blueprint(blueprint, url_prefix="/api/login")
 
-@app.route("/api/python")
-def hello_world():
-    return "<p>Hello, World!</p>"
+@app.route("/api/home")
+def index():
+    return '<h1>Craftsy Back End Development</h1>'
 
 @app.route("/api/logout")
 def logout():
@@ -33,6 +33,10 @@ class Users(Resource):
 # create/login local user on successful OAuth login
 class GoogleLoginResource(Resource):
     def post(self):
+        if not current_user.is_authenticated:
+            flash("Failed to log in.", category="error")
+            return {"success": False}, 401
+        
         if not google.authorized:
             flash("Failed to log in.", category="error")
             return {"success": False}, 401
@@ -47,11 +51,11 @@ class GoogleLoginResource(Resource):
         user_id = info["id"]
 
         # Find this OAuth token in the database, or create it
-        query = OAuth.query.filter_by(provider=google_blueprint.name, provider_user_id=user_id)
+        query = OAuth.query.filter_by(provider=blueprint.name, provider_user_id=user_id)
         try:
             oauth = query.one()
         except NoResultFound:
-            oauth = OAuth(provider=google_blueprint.name, provider_user_id=user_id, token=google.token["access_token"])
+            oauth = OAuth(provider=blueprint.name, provider_user_id=user_id, token=google.token["access_token"])
 
         if oauth.user:
             login_user(oauth.user)

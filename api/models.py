@@ -3,7 +3,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from flask_login import LoginManager, UserMixin
 from flask_dance.consumer.storage.sqla import OAuthConsumerMixin
 
-from config import db
+from config import db, app
 
 class User(db.Model, SerializerMixin, UserMixin):
     __tablename__ = "users"
@@ -20,7 +20,7 @@ class OAuth(db.Model, OAuthConsumerMixin):
     user = db.relationship(User)
 
 # setup login manager
-login_manager = LoginManager()
+login_manager = LoginManager(app)
 login_manager.login_view = "google.login"
 
 
