@@ -1,34 +1,27 @@
 import os
 from dotenv import load_dotenv
 from flask import Flask
+from flask_cors import CORS
 from flask_migrate import Migrate
 from flask_restful import Api
 from flask_sqlalchemy import SQLAlchemy
-from flask_oauthlib.client import OAuth
 
 load_dotenv()
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('URI')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SECRET_KEY'] = os.environ.get('FLASK_SECRET_KEY')
+app.config['GOOGLE_OAUTH_CLIENT_ID'] = os.environ.get('GOOGLE_OAUTH_CLIENT_ID')
+app.config['GOOGLE_OAUTH_CLIENT_SECRET'] = os.environ.get('GOOGLE_OAUTH_CLIENT_SECRET')
+app.config['OAUTHLIB_RELAX_TOKEN_SCOPE'] = os.environ.get('OAUTHLIB_RELAX_TOKEN_SCOPE')
+app.config['OAUTHLIB_INSECURE_TRANSPORT'] = os.environ.get('OAUTHLIB_INSECURE_TRANSPORT')
 app.json.compact = False
 
 db = SQLAlchemy()
 migrate = Migrate(app, db)
 db.init_app(app)
 
-oauth = OAuth(app)
-
 api = Api(app)
+CORS(app)
 
-google = oauth.remote_app(
-    'google',
-    consumer_key='YOUR_GOOGLE_CLIENT_ID',
-    consumer_secret='YOUR_GOOGLE_CLIENT_SECRET',
-    request_token_params={'scope': 'email'},
-    base_url='https://www.googleapis.com/oauth2/v1/',
-    request_token_url=None,
-    access_token_method='POST',
-    access_token_url='https://accounts.google.com/o/oauth2/token',
-    authorize_url='https://accounts.google.com/o/oauth2/auth',
-)
