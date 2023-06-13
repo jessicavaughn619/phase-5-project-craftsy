@@ -1,20 +1,14 @@
-import React from "react";
+'use client'
+import Link from "next/link"
 
-export default function NavBar({ user, onSetUser }) {
-    function handleLogoutClick() {
-        fetch("/api/logout", { method: "DELETE" }).then((r) => {
-            if (r.ok) {
-              onSetUser(null);
-            }
-          });
-        }
+export default function NavBar() {
+
 return (
-  <div id="navbar-container-wrapper">
-    <h1>Craftsy</h1>
-    <p id="welcome">Welcome, {user.username}!</p>
-    <div id="links">
-      <button onClick={handleLogoutClick}>Logout</button>
-    </div>
+  <div className="flex flex-row space-x-4">
+    <Link className="hover:text-amber-600" href="/">Home</Link>
+    <Link className="hover:text-amber-600" href="/products">Products</Link>
+    <Link className="hover:text-amber-600" href="/about">About</Link>
+    <Link className="hover:text-amber-600" href="/contact">Contact</Link>
   </div>
 )
 }

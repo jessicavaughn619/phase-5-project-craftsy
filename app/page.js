@@ -1,8 +1,8 @@
 'use client'
 
-import Home from "./components/Home"
-import SignUpForm from "./components/SignUpForm"
-import LoginForm from "./components/LoginForm"
+import Home from "./home"
+import SignUpForm from "./components/signupform"
+import LoginForm from "./components/loginform"
 
 import React, { useEffect, useState } from 'react';
 
@@ -26,7 +26,10 @@ export default function RootPage() {
 
   return (
     <div>
-      {user ? <Home onSetUser={setUser} user={user}/> : 
+      {user ? 
+      <div>
+        <Home onSetUser={setUser} user={user}/>
+      </div> : 
       <div>
         <SignUpForm onLogin={setUser}/>
         <LoginForm onLogin={setUser}/>
