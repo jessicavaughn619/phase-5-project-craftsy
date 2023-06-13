@@ -1,90 +1,86 @@
-from flask import request, session, make_response, flash, redirect, url_for
+from flask import request, session, make_response
 from flask_restful import Api, Resource
-from sqlalchemy.exc import IntegrityError, NoResultFound
-from flask_login import current_user, login_user, logout_user
-from flask_dance.contrib.google import google, make_google_blueprint
-from flask_dance.consumer.storage.sqla import SQLAlchemyStorage
+from sqlalchemy.exc import IntegrityError
 
 from config import app, db
-from models import User, OAuth
+from models import User
 
 api = Api(app)
 
-blueprint = make_google_blueprint(
-    scope=["email"],
-    storage=SQLAlchemyStorage(OAuth, db.session, user=current_user)
-)
-app.register_blueprint(blueprint, url_prefix="/api/login")
 
-@app.route("/api/home")
+@app.route('/api/home')
 def index():
     return '<h1>Craftsy Back End Development</h1>'
-
-@app.route("/api/logout")
-def logout():
-    logout_user()
-    return redirect("/api/python")
 
 class Users(Resource):
     def get(self):
         users = [user.to_dict() for user in User.query.all()]
         return make_response(users, 200)
 
-# create/login local user on successful OAuth login
-class GoogleLoginResource(Resource):
+class Signup(Resource):
     def post(self):
-        if not current_user.is_authenticated:
-            flash("Failed to log in.", category="error")
-            return {"success": False}, 401
-        
-        if not google.authorized:
-            flash("Failed to log in.", category="error")
-            return {"success": False}, 401
+        request_json = request.get_json()
 
-        resp = google.get("/oauth2/v1/userinfo")
-        if not resp.ok:
-            msg = "Failed to fetch user info."
-            flash(msg, category="error")
-            return {"success": False}, 500
+        first_name = request_json.get('firstName')
+        last_name= request_json.get('lastName')
+        username = request_json.get('username')
+        password = request_json.get('password')
 
-        info = resp.json()
-        user_id = info["id"]
+        user = User(
+            first_name=first_name,
+            last_name=last_name,
+            username=username,
+        )
 
-        # Find this OAuth token in the database, or create it
-        query = OAuth.query.filter_by(provider=blueprint.name, provider_user_id=user_id)
+        user.password_hash = password
+
         try:
-            oauth = query.one()
-        except NoResultFound:
-            oauth = OAuth(provider=blueprint.name, provider_user_id=user_id, token=google.token["access_token"])
-
-        if oauth.user:
-            login_user(oauth.user)
-            flash("Successfully signed in.")
-
-        else:
-            # Create a new local user account for this user
-            user = User(email=info["email"])
-            # Associate the new local user account with the OAuth token
-            oauth.user = user
-            # Save and commit our database models
-            db.session.add_all([user, oauth])
+            db.session.add(user)
             db.session.commit()
-            # Log in the new local user account
-            login_user(user)
-            flash("Successfully signed in.")
+            session['user_id'] = user.id
+            return user.to_dict(), 201
+        except IntegrityError:
+            return {'error': '422 Unprocessable Entity'}, 422
+        
+class CheckSession(Resource):
+    def get(self):
+        if session.get('user_id'):
+            user = User.query.filter(User.id == session['user_id']).first()
+            return user.to_dict(), 200
+        return {'error': '401 Unauthorized'}, 401
 
-        return {"success": True}, 200
-
-
-# notify on OAuth provider error
-class GoogleErrorResource(Resource):
+class Login(Resource):
     def post(self):
-        message = request.form.get("message")
-        response = request.form.get("response")
-        msg = f"OAuth error from Google! message={message} response={response}"
-        flash(msg, category="error")
-        return {"success": True}, 200
 
-api.add_resource(GoogleLoginResource, '/api/login', endpoint="api/login")
-api.add_resource(GoogleErrorResource, '/api/error')
+        request_json = request.get_json()
+
+        username = request_json.get('username')
+        password = request_json.get('password')
+
+        user = User.query.filter(User.username == username).first()
+
+        if user:
+            if user.authenticate(password):
+
+                session['user_id'] = user.id
+                return user.to_dict(), 200
+            return {'error': 'Incorrect password.'}, 401
+
+        return {'error': '401 Unauthorized'}, 401
+
+class Logout(Resource):
+    def delete(self):
+        
+        if session.get('user_id'):
+            
+            session['user_id'] = None
+            
+            return {}, 204
+        
+        return {'error': '401 Unauthorized'}, 401
+    
+api.add_resource(Signup, '/api/signup', endpoint='signup')
+api.add_resource(CheckSession, '/api/check_session', endpoint='check_session')
+api.add_resource(Login, '/api/login', endpoint='login')
+api.add_resource(Logout, '/api/logout', endpoint='logout')
 api.add_resource(Users, '/api/users', endpoint='users')

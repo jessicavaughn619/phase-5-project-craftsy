@@ -1,29 +1,32 @@
 from sqlalchemy_serializer import SerializerMixin
 from sqlalchemy.ext.hybrid import hybrid_property
-from flask_login import LoginManager, UserMixin
-from flask_dance.consumer.storage.sqla import OAuthConsumerMixin
 
-from config import db, app
+from config import db, bcrypt
 
-class User(db.Model, SerializerMixin, UserMixin):
-    __tablename__ = "users"
+class User(db.Model, SerializerMixin):
+    __tablename__ = 'users'
+
+    serialize_rules = ('-_password_hash',)
 
     id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String, nullable=False)
+    first_name = db.Column(db.String, nullable=False)
+    last_name = db.Column(db.String, nullable=False)
+    username = db.Column(db.String, unique=True, nullable=False)
+    _password_hash = db.Column(db.String)
+
+    @hybrid_property
+    def password_hash(self):
+        raise AttributeError("Password hashes may not be viewed.")
+    
+    @password_hash.setter
+    def password_hash(self, password):
+        password_hash = bcrypt.generate_password_hash(
+            password.encode('utf-8'))
+        self._password_hash = password_hash.decode('utf-8')
+    
+    def authenticate(self, password):
+        return bcrypt.check_password_hash(
+            self._password_hash, password.encode('utf-8'))
 
     def __repr__(self):
-        return f'< User ID: {self.id} | Email: {self.email} >'
-    
-class OAuth(db.Model, OAuthConsumerMixin):
-    provider_user_id = db.Column(db.String(256), unique=True, nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
-    user = db.relationship(User)
-
-# setup login manager
-login_manager = LoginManager(app)
-login_manager.login_view = "google.login"
-
-
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
+        return f'<User {self.username}>'
