@@ -5,4 +5,7 @@ flask-sqlalchemy
 flask-login>=0.5.0
 blinker
 psycopg2
-gunicorn
+flask-bcrypt==1.0.1
+bcrypt==4.0.1
+sqlalchemy==2.0.13 ; python_version >= '3.7'
+sqlalchemy-serializer==1.4.1
