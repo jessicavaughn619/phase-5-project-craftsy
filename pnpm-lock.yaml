@@ -5,9 +5,6 @@ settings:
   excludeLinksFromLockfile: false
 
 dependencies:
-  '@react-oauth/google':
-    specifier: ^0.11.0
-    version: 0.11.0(react-dom@18.2.0)(react@18.2.0)
   '@types/node':
     specifier: 20.1.4
     version: 20.1.4
@@ -50,9 +47,6 @@ dependencies:
   react-dom:
     specifier: 18.2.0
     version: 18.2.0(react@18.2.0)
-  react-google-login:
-    specifier: ^5.2.2
-    version: 5.2.2(react-dom@18.2.0)(react@18.2.0)
   tailwindcss:
     specifier: 3.3.2
     version: 3.3.2
@@ -294,16 +288,6 @@ packages:
       open: 9.1.0
       picocolors: 1.0.0
       tslib: 2.5.2
-    dev: false
-
-  /@react-oauth/google@0.11.0(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-yeypwdQCcFIAo43OqVOLBfUXuxmxt3xiybfP9h3smtBW4UeFXFVQDsq+d+GlbZFo0TpONPR2+KCk/KT1/pQnvQ==}
-    peerDependencies:
-      react: '>=16.8.0'
-      react-dom: '>=16.8.0'
-    dependencies:
-      react: 18.2.0
-      react-dom: 18.2.0(react@18.2.0)
     dev: false
 
   /@rushstack/eslint-patch@1.3.0:
